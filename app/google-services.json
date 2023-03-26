@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "856281341154",
+    "project_id": "mematic-pum",
+    "storage_bucket": "mematic-pum.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856281341154:android:445f2d088acd802bc492bb",
+        "android_client_info": {
+          "package_name": "com.example.mematicpum"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "856281341154-4psi0kj2j24fev19i30n7lbjuna8cnt5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmMh136fN0QHVdTPIG1ORdFqTzc8Diuu8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856281341154-4psi0kj2j24fev19i30n7lbjuna8cnt5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
