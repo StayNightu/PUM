@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Mematic PUM</string>
+    <string name="upload_success">Uploaded successfully.</string>
+    <string name="upload_failure">Something went wrong.</string>
+    <string name="generic_error">Something went wrong.</string>
+    <string name="values">upload_success</string>
 </resources>
