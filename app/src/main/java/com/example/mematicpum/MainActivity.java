@@ -2,6 +2,7 @@ package com.example.mematicpum;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Bundle;
@@ -26,7 +27,10 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     Button mUploadButton;
+
     Button mShowImagesButton;
+
+    Button button;
     ImageView mImage;
     TextView mUploadText;
     ProgressBar mUploadProgressBar;
@@ -37,6 +41,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openActivity2();
+            }
+        });
+
         mImage = findViewById(R.id.uploadImageContainer);
         mUploadText = findViewById(R.id.uploadTextView);
         mUploadProgressBar = findViewById(R.id.uploadProgressBar);
@@ -44,6 +56,10 @@ public class MainActivity extends AppCompatActivity {
         mUploadButton.setOnClickListener(uploadImageOnClickHandler);
         mShowImagesButton = findViewById(R.id.showImagesButton);
         mShowImagesButton.setOnClickListener(showImagesOnClickHandler);
+    }
+    public void openActivity2() {
+        Intent intent = new Intent(this, Share.class);
+        startActivity(intent);
     }
 
     View.OnClickListener uploadImageOnClickHandler = new View.OnClickListener() {
