@@ -1,9 +1,12 @@
 package com.example.mematicpum;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,8 +17,11 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.ListResult;
 import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -23,6 +29,9 @@ import com.google.firebase.storage.UploadTask;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -34,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     ImageView mImage;
     TextView mUploadText;
     ProgressBar mUploadProgressBar;
+    MemeListAdapter memeListAdapter;
     private final FirebaseStorage storage = FirebaseStorage.getInstance();
 
     @Override
@@ -56,6 +66,11 @@ public class MainActivity extends AppCompatActivity {
         mUploadButton.setOnClickListener(uploadImageOnClickHandler);
         mShowImagesButton = findViewById(R.id.showImagesButton);
         mShowImagesButton.setOnClickListener(showImagesOnClickHandler);
+        RecyclerView recyclerView = findViewById(R.id.recyclerViewMemeList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        memeListAdapter = new MemeListAdapter();
+        recyclerView.setAdapter(memeListAdapter);
+
     }
     public void openActivity2() {
         Intent intent = new Intent(this, Share.class);
@@ -108,6 +123,43 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onClick(View view) {
+            StorageReference listRef = storage.getReference().child("firebase/images");
+
+            Task<ListResult> getListTask = listRef.listAll()
+                    .addOnSuccessListener(new OnSuccessListener<ListResult>() {
+                        @Override
+                        public void onSuccess(ListResult listResult) {
+//                            for (StorageReference prefix : listResult.getPrefixes()) {
+//                                // All the prefixes under listRef.
+//                                // You may call listAll() recursively on them.
+//                            }
+
+//                            MemeListAdapter adapter = new MemeListAdapter();
+                            ArrayList<MemeListItem> memeList = new ArrayList<>();
+                            for (StorageReference item : listResult.getItems()) {
+                                // All the items under listRef.
+                                try{
+                                    final Bitmap[] bitmap = new Bitmap[1];
+                                    final String name = "tempFile"; // TODO: do zmiany
+                                    File localFile = File.createTempFile("tempFile", ".png");
+                                    item.getFile(localFile)
+                                            .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                                                @Override
+                                                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                                    bitmap[0] = BitmapFactory.decodeFile(localFile.getAbsolutePath());
+                                                }
+                                            });
+                                    MemeListItem memeItem = new MemeListItem(name, bitmap[0]);
+                                    memeList.add(memeItem);
+                                }catch (IOException e){
+                                    System.out.println(e.getStackTrace());
+                                }
+                            }
+                            MemeListItem[] array = memeList.toArray(new MemeListItem[0]);
+                            memeListAdapter.setData(array);
+                        }
+                    });
+
 
         }
     };
