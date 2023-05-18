@@ -1,14 +1,16 @@
 package com.example.mematicpum;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -17,11 +19,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.ListResult;
 import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -29,35 +28,33 @@ import com.google.firebase.storage.UploadTask;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     Button mUploadButton;
 
+    Button mShareButton;
+    Button mSelectPictureButton;
     Button mShowImagesButton;
-
-    Button button;
     ImageView mImage;
     TextView mUploadText;
     ProgressBar mUploadProgressBar;
-    MemeListAdapter memeListAdapter;
     private final FirebaseStorage storage = FirebaseStorage.getInstance();
+    private static final int REQUEST_IMAGE_PICKER = 1;
+
+    private Uri getImageUriFromDrawable(Drawable drawable) {
+        Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "Title", null);
+        return Uri.parse(path);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        button = findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openActivity2();
-            }
-        });
 
         mImage = findViewById(R.id.uploadImageContainer);
         mUploadText = findViewById(R.id.uploadTextView);
@@ -66,15 +63,23 @@ public class MainActivity extends AppCompatActivity {
         mUploadButton.setOnClickListener(uploadImageOnClickHandler);
         mShowImagesButton = findViewById(R.id.showImagesButton);
         mShowImagesButton.setOnClickListener(showImagesOnClickHandler);
-        RecyclerView recyclerView = findViewById(R.id.recyclerViewMemeList);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        memeListAdapter = new MemeListAdapter();
-        recyclerView.setAdapter(memeListAdapter);
+        mSelectPictureButton = findViewById(R.id.SelectPicture);
+        mSelectPictureButton.setOnClickListener(SelectPictureOnClickHandler);
+        mShareButton = findViewById(R.id.ShareImagesButton);
+        mShareButton.setOnClickListener(ShareImagesOnClickHandler);
 
+        Button editImageButton = findViewById(R.id.editImageButton);
+        editImageButton.setOnClickListener(editImageOnClickHandler);
     }
-    public void openActivity2() {
-        Intent intent = new Intent(this, Share.class);
-        startActivity(intent);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_IMAGE_PICKER && resultCode == RESULT_OK && data != null) {
+            Uri selectedImageUri = data.getData();
+
+            mImage.setImageURI(selectedImageUri);
+        }
     }
 
     View.OnClickListener uploadImageOnClickHandler = new View.OnClickListener() {
@@ -118,49 +123,51 @@ public class MainActivity extends AppCompatActivity {
 
         }
     };
-
     View.OnClickListener showImagesOnClickHandler = new View.OnClickListener(){
 
         @Override
         public void onClick(View view) {
-            StorageReference listRef = storage.getReference().child("firebase/images");
 
-            Task<ListResult> getListTask = listRef.listAll()
-                    .addOnSuccessListener(new OnSuccessListener<ListResult>() {
-                        @Override
-                        public void onSuccess(ListResult listResult) {
-//                            for (StorageReference prefix : listResult.getPrefixes()) {
-//                                // All the prefixes under listRef.
-//                                // You may call listAll() recursively on them.
-//                            }
+        }
+    };
 
-//                            MemeListAdapter adapter = new MemeListAdapter();
-                            ArrayList<MemeListItem> memeList = new ArrayList<>();
-                            for (StorageReference item : listResult.getItems()) {
-                                // All the items under listRef.
-                                try{
-                                    final Bitmap[] bitmap = new Bitmap[1];
-                                    final String name = "tempFile"; // TODO: do zmiany
-                                    File localFile = File.createTempFile("tempFile", ".png");
-                                    item.getFile(localFile)
-                                            .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-                                                @Override
-                                                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                                    bitmap[0] = BitmapFactory.decodeFile(localFile.getAbsolutePath());
-                                                }
-                                            });
-                                    MemeListItem memeItem = new MemeListItem(name, bitmap[0]);
-                                    memeList.add(memeItem);
-                                }catch (IOException e){
-                                    System.out.println(e.getStackTrace());
-                                }
-                            }
-                            MemeListItem[] array = memeList.toArray(new MemeListItem[0]);
-                            memeListAdapter.setData(array);
-                        }
-                    });
+    View.OnClickListener ShareImagesOnClickHandler = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Drawable imageDrawable = mImage.getDrawable();
+            if (imageDrawable != null) {
+                Uri selectedImageUri = getImageUriFromDrawable(imageDrawable);
 
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("image/*");
+                shareIntent.putExtra(Intent.EXTRA_STREAM, selectedImageUri);
 
+                startActivity(Intent.createChooser(shareIntent, "Share Image"));
+            } else {
+            }
+        }
+    };
+    View.OnClickListener SelectPictureOnClickHandler = new View.OnClickListener(){
+
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(intent, REQUEST_IMAGE_PICKER);
+        }
+    };
+    View.OnClickListener editImageOnClickHandler = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Drawable imageDrawable = mImage.getDrawable();
+            if (imageDrawable == null) {
+                return;
+            }
+
+            Uri selectedImageUri = getImageUriFromDrawable(imageDrawable);
+            Intent editIntent = new Intent(Intent.ACTION_EDIT);
+            editIntent.setDataAndType(selectedImageUri, "image/*");
+            editIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(editIntent, "Edit Image"));
         }
     };
 
