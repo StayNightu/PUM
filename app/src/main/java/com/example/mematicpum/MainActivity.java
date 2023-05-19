@@ -1,7 +1,8 @@
 package com.example.mematicpum;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
@@ -11,12 +12,14 @@ import android.graphics.Canvas;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.storage.FileDownloadTask;
@@ -44,6 +47,10 @@ public class MainActivity extends AppCompatActivity {
     TextView mUploadText;
     ProgressBar mUploadProgressBar;
     MemeListAdapter memeListAdapter;
+    TextView mShowListText;
+    ProgressBar mShowListProgressBar;
+    RecyclerView recyclerView;
+    boolean isRecyclerViewListShown = false;
     private final FirebaseStorage storage = FirebaseStorage.getInstance();
 
     @Override
@@ -62,13 +69,16 @@ public class MainActivity extends AppCompatActivity {
         mImage = findViewById(R.id.uploadImageContainer);
         mUploadText = findViewById(R.id.uploadTextView);
         mUploadProgressBar = findViewById(R.id.uploadProgressBar);
+        mShowListText = findViewById(R.id.showListTextView);
+        mShowListProgressBar = findViewById(R.id.showListProgressBar);
         mUploadButton = findViewById(R.id.uploadButton);
         mUploadButton.setOnClickListener(uploadImageOnClickHandler);
         mShowImagesButton = findViewById(R.id.showImagesButton);
         mShowImagesButton.setOnClickListener(showImagesOnClickHandler);
-        RecyclerView recyclerView = findViewById(R.id.recyclerViewMemeList);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        memeListAdapter = new MemeListAdapter();
+        recyclerView = findViewById(R.id.recyclerViewMemeList);
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 4));
+        ArrayList<MemeListItem> items = new ArrayList<MemeListItem>();
+        memeListAdapter = new MemeListAdapter(items, mImage);
         recyclerView.setAdapter(memeListAdapter);
 
     }
@@ -123,44 +133,72 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onClick(View view) {
+            final float scale = getBaseContext().getResources().getDisplayMetrics().density;
+            ViewGroup.LayoutParams params = recyclerView.getLayoutParams();
+            if (isRecyclerViewListShown){
+                //hide
+                params.height = (int)(1 * scale + 0.5f);
+                recyclerView.setLayoutParams(params);
+                isRecyclerViewListShown = false;
+                mShowImagesButton.setText("Show images");
+                return;
+            }
             StorageReference listRef = storage.getReference().child("firebase/images");
 
-            Task<ListResult> getListTask = listRef.listAll()
-                    .addOnSuccessListener(new OnSuccessListener<ListResult>() {
-                        @Override
-                        public void onSuccess(ListResult listResult) {
+            Task<ListResult> getListTask = listRef.listAll();
+            mShowListText.setVisibility(View.VISIBLE);
+            mShowListProgressBar.setVisibility(View.VISIBLE);
+            mShowImagesButton.setEnabled(false);
+            params.height = (int)(200 * scale + 0.5f);
+            recyclerView.setLayoutParams(params);
+            isRecyclerViewListShown = true;
+            mShowImagesButton.setText("Hide images");
+            getListTask.addOnSuccessListener(new OnSuccessListener<ListResult>() {
+                @Override
+                public void onSuccess(ListResult listResult) {
+                    mShowListText.setText(String.format("Załadowano %s elementów", listResult.getItems().size()));
+//                    mShowListText.setVisibility(View.INVISIBLE);
+                    mShowListProgressBar.setVisibility(View.INVISIBLE);
+                    mShowImagesButton.setEnabled(true);
 //                            for (StorageReference prefix : listResult.getPrefixes()) {
 //                                // All the prefixes under listRef.
 //                                // You may call listAll() recursively on them.
 //                            }
 
-//                            MemeListAdapter adapter = new MemeListAdapter();
-                            ArrayList<MemeListItem> memeList = new ArrayList<>();
-                            for (StorageReference item : listResult.getItems()) {
-                                // All the items under listRef.
-                                try{
-                                    final Bitmap[] bitmap = new Bitmap[1];
-                                    final String name = "tempFile"; // TODO: do zmiany
-                                    File localFile = File.createTempFile("tempFile", ".png");
-                                    item.getFile(localFile)
-                                            .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-                                                @Override
-                                                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                                    bitmap[0] = BitmapFactory.decodeFile(localFile.getAbsolutePath());
-                                                }
-                                            });
-                                    MemeListItem memeItem = new MemeListItem(name, bitmap[0]);
-                                    memeList.add(memeItem);
-                                }catch (IOException e){
-                                    System.out.println(e.getStackTrace());
-                                }
-                            }
-                            MemeListItem[] array = memeList.toArray(new MemeListItem[0]);
-                            memeListAdapter.setData(array);
+                    for (StorageReference item : listResult.getItems()) {
+                        // All the items under listRef.
+                        try{
+                            File localFile = File.createTempFile("tempFile", ".png");
+                            item.getFile(localFile)
+                                    .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                                        @Override
+                                        public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                            Bitmap bitmap = BitmapFactory.decodeFile(localFile.getAbsolutePath());
+                                            MemeListItem memeItem = new MemeListItem(localFile.getName(), bitmap);
+                                            memeListAdapter.addItem(memeItem);
+                                            memeListAdapter.notifyItemInserted(memeListAdapter.getItemCount());
+                                        }
+                                    }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            Log.d("MemeListAdapter", "onSuccess: Got Failture when getting file");
+                                        }
+                                    });
+                        }catch (IOException e){
+                            Log.d("MemeListAdapter", "onSuccess: Got Exception");
+                            mShowListText.setText("Nie można załadować.");
+                            mShowListText.setVisibility(View.VISIBLE);
                         }
-                    });
-
-
+                    }
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    mShowListText.setText("Nie można załadować.");
+                    mShowListProgressBar.setVisibility(View.INVISIBLE);
+                    mShowImagesButton.setEnabled(true);
+                }
+            });
         }
     };
 

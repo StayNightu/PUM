@@ -1,6 +1,7 @@
 package com.example.mematicpum;
 
-import android.graphics.Canvas;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,18 +9,30 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.view.menu.MenuView;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class MemeListAdapter extends RecyclerView.Adapter<MemeListAdapter.ViewHolder> {
-    private MemeListItem[] localDataSet;
+import java.util.ArrayList;
 
-    public MemeListAdapter() {
-        localDataSet = new MemeListItem[]{};
+public class MemeListAdapter extends RecyclerView.Adapter<MemeListAdapter.ViewHolder> {
+    private ArrayList<MemeListItem> localDataSet;
+    ImageView uploadImageContainer;
+
+    public MemeListAdapter(ImageView uploadImageContainer) {
+        localDataSet = new ArrayList<MemeListItem>();
+        this.uploadImageContainer = uploadImageContainer;
     }
 
-    public void setData(MemeListItem[] dataSet){
+    public MemeListAdapter(ArrayList<MemeListItem> localDataSet, ImageView uploadImageContainer) {
+        this.localDataSet = localDataSet;
+        this.uploadImageContainer = uploadImageContainer;
+    }
+
+    public void setData(ArrayList<MemeListItem> dataSet){
         localDataSet = dataSet;
+    }
+
+    public void addItem(MemeListItem item){
+        localDataSet.add(item);
     }
 
     @NonNull
@@ -27,21 +40,34 @@ public class MemeListAdapter extends RecyclerView.Adapter<MemeListAdapter.ViewHo
     public MemeListAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
             .inflate(R.layout.meme_list_item, parent, false);
-
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull MemeListAdapter.ViewHolder holder, int position) {
-        holder.getTextView().setText(localDataSet[position].getName());
-        holder.getImageView().setImageBitmap(localDataSet[position].getImage());
-//        Canvas captureCanvas = new Canvas(localDataSet[position].getImage());
-//        holder.getImageView().draw(captureCanvas);
+        holder.getTextView().setText(localDataSet.get(position).getName());
+        if (localDataSet.get(position).getImage() != null) {
+            MemeListItem image = localDataSet.get(position);
+            if (image != null){
+                holder.getImageView().setImageBitmap(image.getImage());
+                holder.getImageView().setOnClickListener(uploadImageToContainer);
+            }
+        }
     }
+
+    View.OnClickListener uploadImageToContainer = new View.OnClickListener(){
+        @Override
+        public void onClick(View view) {
+            if (uploadImageContainer != null){
+                Bitmap bm=((BitmapDrawable)((ImageView)view).getDrawable()).getBitmap();
+                uploadImageContainer.setImageBitmap(bm);
+            }
+        }
+    };
 
     @Override
     public int getItemCount() {
-        return localDataSet.length;
+        return localDataSet.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
