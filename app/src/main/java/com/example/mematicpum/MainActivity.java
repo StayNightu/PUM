@@ -1,5 +1,6 @@
 package com.example.mematicpum;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -9,7 +10,11 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,9 +45,9 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
     Button mUploadButton;
 
+    Button mShareButton;
+    Button mSelectPictureButton;
     Button mShowImagesButton;
-
-    Button button;
     ImageView mImage;
     TextView mUploadText;
     ProgressBar mUploadProgressBar;
@@ -52,19 +57,21 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     boolean isRecyclerViewListShown = false;
     private final FirebaseStorage storage = FirebaseStorage.getInstance();
+    private static final int REQUEST_IMAGE_PICKER = 1;
+
+    private Uri getImageUriFromDrawable(Drawable drawable) {
+        Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "Title", null);
+        return Uri.parse(path);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        button = findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openActivity2();
-            }
-        });
 
         mImage = findViewById(R.id.uploadImageContainer);
         mUploadText = findViewById(R.id.uploadTextView);
@@ -75,16 +82,28 @@ public class MainActivity extends AppCompatActivity {
         mUploadButton.setOnClickListener(uploadImageOnClickHandler);
         mShowImagesButton = findViewById(R.id.showImagesButton);
         mShowImagesButton.setOnClickListener(showImagesOnClickHandler);
+        mSelectPictureButton = findViewById(R.id.SelectPicture);
+        mSelectPictureButton.setOnClickListener(SelectPictureOnClickHandler);
+        mShareButton = findViewById(R.id.ShareImagesButton);
+        mShareButton.setOnClickListener(ShareImagesOnClickHandler);
         recyclerView = findViewById(R.id.recyclerViewMemeList);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 4));
         ArrayList<MemeListItem> items = new ArrayList<MemeListItem>();
         memeListAdapter = new MemeListAdapter(items, mImage);
         recyclerView.setAdapter(memeListAdapter);
 
+        Button editImageButton = findViewById(R.id.editImageButton);
+        editImageButton.setOnClickListener(editImageOnClickHandler);
     }
-    public void openActivity2() {
-        Intent intent = new Intent(this, Share.class);
-        startActivity(intent);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_IMAGE_PICKER && resultCode == RESULT_OK && data != null) {
+            Uri selectedImageUri = data.getData();
+
+            mImage.setImageURI(selectedImageUri);
+        }
     }
 
     View.OnClickListener uploadImageOnClickHandler = new View.OnClickListener() {
@@ -199,6 +218,46 @@ public class MainActivity extends AppCompatActivity {
                     mShowImagesButton.setEnabled(true);
                 }
             });
+        }
+    };
+
+    View.OnClickListener ShareImagesOnClickHandler = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Drawable imageDrawable = mImage.getDrawable();
+            if (imageDrawable != null) {
+                Uri selectedImageUri = getImageUriFromDrawable(imageDrawable);
+
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("image/*");
+                shareIntent.putExtra(Intent.EXTRA_STREAM, selectedImageUri);
+
+                startActivity(Intent.createChooser(shareIntent, "Share Image"));
+            } else {
+            }
+        }
+    };
+    View.OnClickListener SelectPictureOnClickHandler = new View.OnClickListener(){
+
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(intent, REQUEST_IMAGE_PICKER);
+        }
+    };
+    View.OnClickListener editImageOnClickHandler = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Drawable imageDrawable = mImage.getDrawable();
+            if (imageDrawable == null) {
+                return;
+            }
+
+            Uri selectedImageUri = getImageUriFromDrawable(imageDrawable);
+            Intent editIntent = new Intent(Intent.ACTION_EDIT);
+            editIntent.setDataAndType(selectedImageUri, "image/*");
+            editIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(editIntent, "Edit Image"));
         }
     };
 

@@ -68,12 +68,12 @@
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:layout_marginTop="16dp"
-        android:contentDescription="TODO"
         android:src="@drawable/template1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompat="@drawable/template1" />
+        tools:srcCompat="@drawable/template1"
+        android:contentDescription="TODO" />
 
     <Button
         android:id="@+id/showImagesButton"
@@ -86,15 +86,38 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/SelectPicture"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_marginTop="180dp"
+        android:text="Select Picture"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/uploadImageContainer" />
+
+    <Button
+        android:id="@+id/editImageButton"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:text="Edit Image"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/SelectPicture" />
+
+    <Button
+        android:id="@+id/ShareImagesButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="16dp"
+        android:layout_marginTop="70dp"
         android:text="Share image"
-        app:layout_constraintBottom_toTopOf="@+id/showImagesButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/SelectPicture" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewMemeList"
