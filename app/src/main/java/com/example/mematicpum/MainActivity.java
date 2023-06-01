@@ -19,10 +19,18 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Switch;
 import android.widget.TextView;
+import androidx.appcompat.app.AppCompatDelegate;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.initialization.InitializationStatus;
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -48,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
     Button mShareButton;
     Button mSelectPictureButton;
     Button mShowImagesButton;
+
+    Switch switchDarkMode;
     ImageView mImage;
     TextView mUploadText;
     ProgressBar mUploadProgressBar;
@@ -58,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
     boolean isRecyclerViewListShown = false;
     private final FirebaseStorage storage = FirebaseStorage.getInstance();
     private static final int REQUEST_IMAGE_PICKER = 1;
+
+    private AdView adView;
 
     private Uri getImageUriFromDrawable(Drawable drawable) {
         Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
@@ -72,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        adView = findViewById(R.id.adView);
 
         mImage = findViewById(R.id.uploadImageContainer);
         mUploadText = findViewById(R.id.uploadTextView);
@@ -94,6 +107,28 @@ public class MainActivity extends AppCompatActivity {
 
         Button editImageButton = findViewById(R.id.editImageButton);
         editImageButton.setOnClickListener(editImageOnClickHandler);
+        Switch switchDarkMode = findViewById(R.id.switchDarkMode);
+
+
+        MobileAds.initialize(this, new OnInitializationCompleteListener() {
+            @Override
+            public void onInitializationComplete(@NonNull InitializationStatus initializationStatus) {
+                AdRequest adRequest = new AdRequest.Builder().build();
+                adView.loadAd(adRequest);
+            }
+        });
+
+        switchDarkMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                } else {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                }
+            }
+        });
+
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
