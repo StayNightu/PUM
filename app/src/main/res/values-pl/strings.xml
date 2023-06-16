@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mematic PUM</string>
+    <string name="upload_success">udostępniono pomyślnie</string>
+    <string name="upload_failure">coś poszło nie tak</string>
+    <string name="generic_error">coś poszło nie tak</string>
+    <string name="values">Załadowano pomyślnie</string>
+    <string name="title_activity_share">Udostęp</string>
+    <string name="upload_image">Załaduj</string>
+    <string name="loading">Ładowanie</string>
+    <string name="uploading">Udostęp</string>
+    <string name="show_images">Pokaż</string>
+    <string name="select_picture">"Wybierz "</string>
+    <string name="edit_image">Edytuj</string>
+    <string name="show_list">Pokaz list</string>
+    <string name="share_image">Udostepnij</string>
+</resources>
